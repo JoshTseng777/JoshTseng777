@@ -1,97 +1,141 @@
-# CLAUDE WIP Report — 施工藍圖 (Skill)
+# WIP 報表轉換 · 施工藍圖 (Build Spec)
 
-> 這份文件是 Claude 在這個專案中的「施工藍圖」。它描述要做什麼、用哪份資料、
-> 以及每個分析任務的**標準答案**,讓任何人(或自動化測試)都能驗證結果是否正確。
+> 這份檔案是 L2「skill / 規則檔」。Claude Code 每次施工前先讀這份,照著蓋 Phase 1–4。
+> 工作原則沿用 karpathy CLAUDE.md：Think Before Coding · Simplicity First · Surgical Changes · Goal-Driven。
 
-## 1. 專案目標 (Goal)
+---
 
-針對 `fixtures/crm_sample.csv` 這份 CRM 假資料,建立一套可重複執行的分析流程,
-並用本文件記錄的標準答案來驗證輸出是否正確。這是一個資料分析的練習腳手架
-(data analytics practice scaffold)。
+## 0. 專案目標 (一句話)
 
-## 2. 資料來源 (Data Source)
+把 CRM batch 匯出(72 欄)轉成一份精簡 WIP 報表(16 欄),只保留 BGA 線路課,並對「停留逾時」與「急料 LOTTYPE」兩種列做反紅標示,輸出成 Excel。
 
-- 路徑:`fixtures/crm_sample.csv`
-- 筆數:15 位客戶 (`C001`–`C015`)
-- 欄位:
+本層只做**資料轉換**;排程(L1)、Ding+ 推送(L5 最後一哩)**不在本 spec 範圍**,先別碰。
 
-| 欄位 | 型別 | 說明 |
-| --- | --- | --- |
-| `customer_id` | string | 客戶唯一編號 |
-| `name` | string | 客戶姓名(假資料) |
-| `region` | enum | `North` / `South` / `East` / `West` |
-| `signup_date` | date (YYYY-MM-DD) | 註冊日期 |
-| `plan` | enum | `Basic` (50) / `Pro` (200) / `Enterprise` (500) |
-| `monthly_revenue` | int | 每月經常性收入 (USD),與 `plan` 對應 |
-| `status` | enum | `active` / `churned` |
-| `last_active_date` | date (YYYY-MM-DD) | 最後活躍日期 |
+---
 
-## 3. 施工步驟 (Work Plan)
+## 1. 核心約束 (CONSTRAINTS — 違反就是壞掉)
 
-1. 載入 `fixtures/crm_sample.csv`。
-2. 計算第 4 節列出的各項指標。
-3. 將計算結果對照第 4 節的**標準答案**,全部相符才算通過。
+1. **資料邊界 / 不可外洩**
+   - 真實 CRM 資料**絕不可進入任何模型 context**。Claude Code 是 **build-time 工具**,只對著 `fixtures/` 的假資料開發。
+   - **Run-time 必須是純確定性 Python,執行時不含任何模型呼叫。** 蓋好之後每班次在跑的是一支腳本,不是 agent。
 
-## 4. 標準答案 (Ground Truth)
+2. **簡繁正規化 (最高優先,漏一筆=事故)**
+   - 欄位名(header)是**简体**;儲存格內容(值)主要是**繁体**,但**不保證 100%**。
+   - 所有**值的比對**一律先過 `OpenCC`(統一成一種字形)再比。**禁止**直接用字面字串 `==` 比中文值。
+   - 欄位的**選取**用简体欄名(見 §3)。
 
-> 以下數字由 `fixtures/crm_sample.csv` 直接計算而得,作為驗收基準。
+3. **冪等 / 確定性**:同一份輸入,跑幾次結果都必須完全一致(含急料筆數)。
 
-### 4.1 客戶總覽
-- 客戶總數:**15**
-- 活躍 (active):**12**
-- 流失 (churned):**3**
-- 流失率 (churn rate):**20.0%**
+4. **Pure function**:核心轉換寫成 `transform(df_in) -> df_out`,**讀檔與寫檔分離**,不可混在轉換裡。理由:L6 驗證 agent 才能單獨測它。
 
-### 4.2 收入指標
-- 全部客戶 MRR 總和:**3000**
-- 活躍客戶 MRR 總和:**2700**
-- 活躍客戶 ARPU(平均每用戶收入):**225.0**
+---
 
-### 4.3 區域分布(客戶數)
-| Region | Customers |
-| --- | --- |
-| North | 5 |
-| South | 4 |
-| East | 3 |
-| West | 3 |
+## 2. 輸入合約 (CRM batch)
 
-### 4.4 各區域活躍 MRR
-| Region | Active MRR |
-| --- | --- |
-| East | 1000 |
-| North | 900 |
-| West | 450 |
-| South | 350 |
+- 分隔符:Tab。共 **72 欄**。
+- **編碼必須自動偵測,禁止寫死。** 依序嘗試 `utf-8` → `gbk` → `big5`,讀到不亂碼為止。
+  - 提示:因為 header 简体、內容繁体並存,檔案**極可能是 utf-8 或 gbk,不會是 big5**(big5 編不了简体 header)。但仍以實測為準。
+- 讀進來**不可靜默漏行**:讀到的列數必須等於原檔列數。
 
-- 活躍 MRR 最高的區域:**East (1000)**
+---
 
-### 4.5 方案分布(客戶數)
-| Plan | Customers |
-| --- | --- |
-| Basic | 6 |
-| Pro | 6 |
-| Enterprise | 3 |
+## 3. 輸出合約 (報表) — 16 欄,順序固定
 
-## 5. 驗證方式 (How to Verify)
+全部都是 CRM 直接帶入 (passthrough),**無計算、無合併欄**。照下列順序:
 
-任何分析腳本只要讀入同一份 CSV,計算結果應與第 4 節完全一致。範例(Python):
-
-```python
-import csv
-from collections import defaultdict
-
-rows = list(csv.DictReader(open("fixtures/crm_sample.csv")))
-active = [r for r in rows if r["status"] == "active"]
-
-assert len(rows) == 15
-assert len(active) == 12
-assert sum(int(r["monthly_revenue"]) for r in active) == 2700  # active MRR
-assert round(len([r for r in rows if r["status"] == "churned"]) / len(rows) * 100, 1) == 20.0
-print("OK — all ground-truth checks passed")
+```
+模组 · 课别 · 料号 · 批号 · 当前数量 · 工序描述 · wip当前回圈数 · wip当前层别 ·
+LOTTYPE · 移进时间 · 工站停留时间 · 过账状态 · HOLD原因代码 · HOLD原因描述 ·
+下站工序名称 · 下站工序课别
 ```
 
-## 6. 狀態 (Status)
+(以上 16 個简体欄名,在 CRM 72 欄中都找得到同名欄,一對一搬。)
 
-- [x] 建立 `fixtures/crm_sample.csv` 假資料
-- [x] 記錄標準答案 (ground truth)
-- [ ] 實作分析腳本(後續工作)
+---
+
+## 4. 轉換規則 (LOCKED)
+
+### 4.1 篩列 (row filter)
+- 只保留 `课别` 欄正規化後 == 正規化(`BGA线路课`) 的列,其餘整列丟棄。
+- ⚠️ 作用欄是 **`课别`**,不是 `下站工序课别`。別搞混。
+
+### 4.2 反紅格式規則 A — 停留逾時
+- 目標欄:`工站停留时间`
+- 條件:**數值** `>= 10`(單位:小時)
+- 前提:此欄須先確認為數值型別。fixture 內為純數字(如 `12.5`);若真實資料是 `"12小时30分"` 等字串,Phase 2 要先 parse。
+- 動作:該儲存格 / 該列標記反紅(字紅或底紅,Phase 4 決定)。
+
+### 4.3 反紅格式規則 B — 急料 LOTTYPE
+- 目標欄:`LOTTYPE`
+- 條件:該值**正規化後**,完整等於下列 4 者之一(**完整比對,非前綴**):
+  - `ES-样品先行批`
+  - `QC-量产急料`
+  - `QS-样品急料`
+  - `S1-一般样品`
+- (上面以简体寫出作為正規化後的 canonical 目標;比對時兩邊都先正規化,故繁体值也會命中。)
+- 動作:該儲存格 / 該列標記反紅。
+
+> 規則 A 與 B **互相獨立**。同一列可能只中其一、兩者皆中、或皆不中。
+
+---
+
+## 5. 施工階段 (PHASES) — 每階段自帶 VERIFY 閘
+
+### Phase 1 — 讀檔 (ingest)
+- 目標:把 CRM Tab 檔穩定讀成 DataFrame。
+- **VERIFY**:讀到的列數 == 原檔列數;欄數 == 72。任一不符 → 停,報告編碼/分隔問題。
+
+### Phase 2 — 清洗 + 正規化 (normalize)
+- 目標:建立 OpenCC 正規化工具;確認 `工站停留时间` 可轉為數值;確認 16 個輸出欄都存在。
+- **VERIFY**:16 個目標欄名全部存在(schema assertion);`工站停留时间` 全欄可轉 float(不可轉的列要明確報出,不可靜默吞)。
+
+### Phase 3 — 業務邏輯 (filter + flag)
+- 目標:套用 §4.1 篩列、§4.2 / §4.3 算出兩個反紅布林欄(如 `_red_staytime`, `_red_lottype`)。
+- **VERIFY**(對帳,對應「不可漏料」):
+  - 篩選後筆數、急料(LOTTYPE 命中)筆數,**同輸入跑兩次必須一致**(冪等)。
+  - 用 fixture 的已知答案對拍(見 fixture 附帶的期望值)。
+
+### Phase 4 — 輸出 Excel (render)
+- 目標:寫出報表(16 欄、固定順序),反紅列套用紅色格式。
+- **VERIFY**:檔案開得開;欄序正確;反紅列數 == Phase 3 算出的命中列數。
+
+---
+
+## 6. 停止條件 (STOP) — 對應 L7
+
+- **成功**:Phase 4 產出且其 VERIFY 通過 → 結束,把檔案放進 outbox。
+- **硬上限 / 失敗**:任一 Phase 的 VERIFY 連續失敗達上限(如 3 次)→ **停下並 alert 人**,不可默默產出半成品報表。急料相關失敗一律當成事故等級。
+
+---
+
+## 7. 給 Claude Code 的起手指令 (建議)
+
+> 「先只做 Phase 1–3,對著 `fixtures/crm_sample.csv` 開發,跑通附帶的期望值檢查後再做 Phase 4。
+> 不要碰排程與 Ding+。核心轉換寫成 pure function `transform(df) -> df`,讀寫分離。
+> 任何中文值比對一律先過 OpenCC 正規化,禁止字面 ==。」
+
+---
+
+## 8. Fixture 期望答案 (crm_sample.csv 的標準答案)
+
+fixture 共 8 列。Phase 3 跑完必須完全吻合下表,否則視為 VERIFY 失敗。
+
+| 列 | 课别 | 停留時間 | LOTTYPE | 篩選後保留? | 紅A(停留>=10) | 紅B(急料) |
+|----|------|---------|---------|------------|--------------|----------|
+| R1 | BGA線路課 (繁) | 12.5 | ES-樣品先行批 (繁) | ✅ 保留 | 🔴 | 🔴 |
+| R2 | BGA線路課 (繁) | 8.0 | QC-量產急料 (繁) | ✅ 保留 | — | 🔴 |
+| R3 | BGA線路課 (繁) | 25.3 | P0-量產正式批 (非急料) | ✅ 保留 | 🔴 | — |
+| R4 | BGA線路課 (繁) | 3.2 | QS-樣品急料 (繁) | ✅ 保留 | — | 🔴 |
+| R5 | BGA線路課 (繁) | 10.0 | S1-一般樣品 (繁) | ✅ 保留 | 🔴 (邊界=10) | 🔴 |
+| R6 | BGA线路课 (**简**) | 15 | ES-样品先行批 (**简**) | ✅ 保留 | 🔴 | 🔴 |
+| R7 | 外層線路課 (非BGA) | 50 | ES-樣品先行批 | ❌ 濾掉 | (不適用) | (不適用) |
+| R8 | SMT課 (非BGA) | 2 | S1-一般樣品 | ❌ 濾掉 | (不適用) | (不適用) |
+
+**彙總斷言 (assertions):**
+- 篩選後列數 == **6**(R1–R6;R7、R8 被濾掉)
+- 紅A 命中列數 == **4**(R1, R3, R5, R6)
+- 紅B 命中列數 == **5**(R1, R2, R4, R5, R6)
+
+**這兩列是最關鍵的測試:**
+- **R6**:用简体寫的 `BGA线路课` / `ES-样品先行批`,**必須照樣命中**。命中 = 你的 OpenCC 正規化有效;漏掉 = 正規化沒做或做錯 → 真實環境會漏急料。
+- **R5**:停留 `10.0` 必須算紅(條件是 `>=10`,不是 `>10`)。邊界值測試。
