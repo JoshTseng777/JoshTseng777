@@ -1,0 +1,16 @@
+customer_id,name,region,signup_date,plan,monthly_revenue,status,last_active_date
+C001,Alice Chen,North,2024-01-15,Pro,200,active,2024-06-10
+C002,Bob Lin,South,2024-01-22,Basic,50,active,2024-06-12
+C003,Carol Wang,North,2024-02-03,Enterprise,500,active,2024-06-18
+C004,David Wu,East,2024-02-14,Basic,50,churned,2024-04-02
+C005,Emma Hsu,West,2024-02-28,Pro,200,active,2024-06-15
+C006,Frank Kuo,South,2024-03-05,Basic,50,active,2024-06-01
+C007,Grace Yeh,North,2024-03-19,Pro,200,churned,2024-05-20
+C008,Henry Tsai,East,2024-03-25,Enterprise,500,active,2024-06-20
+C009,Ivy Chang,West,2024-04-02,Basic,50,active,2024-06-08
+C010,Jack Ho,South,2024-04-11,Pro,200,active,2024-06-19
+C011,Karen Lai,North,2024-04-20,Basic,50,churned,2024-05-05
+C012,Leo Sun,East,2024-05-01,Enterprise,500,active,2024-06-21
+C013,Mia Kao,West,2024-05-09,Pro,200,active,2024-06-17
+C014,Nathan Yu,South,2024-05-18,Basic,50,active,2024-06-11
+C015,Olivia Pan,North,2024-05-27,Pro,200,active,2024-06-16
