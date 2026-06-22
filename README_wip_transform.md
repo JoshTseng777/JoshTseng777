@@ -23,7 +23,7 @@ PYTHONPATH=src python -m wip_transform fixtures/crm_sample.csv out.xlsx
 
 | 檔案 | Phase | 職責 |
 | --- | --- | --- |
-| `src/wip_transform/ingest.py` | 1 | 讀檔、編碼自動偵測 (utf-8→gbk→big5)、列數/欄數 VERIFY |
+| `src/wip_transform/ingest.py` | 1 | 讀檔、編碼自動偵測 (utf-8→gbk→big5)、分隔符偵測 (Tab 優先,fixture 為逗號)、列數/欄數 VERIFY |
 | `src/wip_transform/normalize.py` | 2 | OpenCC 簡繁正規化(所有中文值比對的唯一入口) |
 | `src/wip_transform/transform.py` | 2+3 | **pure** `transform(df) -> df`:篩 BGA 線路課 + 兩個反紅旗標 |
 | `src/wip_transform/render.py` | 4 | 寫 16 欄 Excel,反紅列套紅色格式 + VERIFY 反紅列數 |

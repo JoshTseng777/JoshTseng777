@@ -72,22 +72,22 @@ def _row(df_out, batch):
 
 def test_R6_simplified_value_still_hits(df_out):
     # 简体 BGA线路课 / ES-样品先行批 must survive filtering AND hit both flags.
-    assert "B006" in set(df_out["批号"])       # survived the 课别 filter
-    r6 = _row(df_out, "B006")
+    assert "LOT0006" in set(df_out["批号"])     # survived the 课别 filter
+    r6 = _row(df_out, "LOT0006")
     assert bool(r6[FLAG_STAYTIME]) is True
     assert bool(r6[FLAG_LOTTYPE]) is True
 
 
 def test_R5_boundary_staytime_is_red(df_out):
     # 停留 == 10.0 must be red (condition is >=10, not >10).
-    r5 = _row(df_out, "B005")
+    r5 = _row(df_out, "LOT0005")
     assert bool(r5[FLAG_STAYTIME]) is True
 
 
 def test_R7_R8_filtered_out(df_out):
     kept = set(df_out["批号"])
-    assert "B007" not in kept
-    assert "B008" not in kept
+    assert "LOT0007" not in kept  # 外層線路課
+    assert "LOT0008" not in kept  # SMT課
 
 
 # ---------- determinism / idempotency (§1.3) ----------
