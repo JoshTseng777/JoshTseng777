@@ -59,21 +59,30 @@
 - [x] C｜模型調度守則 → `docs/ops/C-model-dispatch.md`
 - [x] D｜判斷力外化（rubric/checklist）→ `docs/ops/D-judgment-rubrics.md`
 - [x] F｜維護協議 → `docs/ops/F-maintenance.md`
-- [x] B｜CLAUDE.md 重構 → `/CLAUDE.md`（39 行，索引 11 項）
+- [x] B｜CLAUDE.md 重構 → `/CLAUDE.md`（36 行，索引 11 項）
 - [x] E｜五份任務交辦範本 → `docs/ops/E-templates/{search,implement,refactor,research,review}.md`
-- [ ] 收尾 1：對抗審查（fresh-context Sonnet subagent）— 已派工，執行中，會直接修檔案
+- [x] 收尾 1：對抗審查（fresh-context Sonnet subagent）— 完成，找到並修正 5 類問題，詳見「3.6」。
 - [ ] 收尾 2：行為測試（Haiku subagent 實跑範本）
 - [ ] 收尾 3：read-back 驗證每個檔案
 - [ ] 收尾 4：一頁總結
-- [ ] commit + push（第一批已完成，還需再 push 這批 B/E 完成的變更）
+- [ ] commit + push（前兩批已完成，還需再 push 對抗審查這批變更）
 
 ## 3. 放棄/延後項
 
 （尚無）
 
+## 3.6 對抗審查結果（fresh-context Sonnet subagent，已抽查其修正屬實）
+
+找到並直接修正：(1) A 診斷第1項第3點教弱模型用 `Explore` 做跨檔案比對，與 `Explore` 自身
+說明文字矛盾，已改派 `general-purpose`；(2) F 文件懸空引用不存在的「B 文件」，已改指
+`CLAUDE.md`本身；(3) G 檔行數誤植（實測 36 行，一度被改成「37 行」，我又修正一次為 36）；
+(4) D 文件「本次 session」指涉不清，未來任何 session 讀到會誤以為指自己，已改「建置本套
+制度那次 session」；(5) 五份 E-templates 的「本任務指定」留白欄補上後果說明（留白＝落到
+Agent 呼叫當下預設值）。未動：G 檔裡 4 項未經使用者確認的預設假設，判斷屬架構選擇不該代拍板。
+
 ## 3.5 派工結果（已驗收）
 
-- B（CLAUDE.md）：Sonnet subagent 完成，39 行（限 150 行內），索引 11 項。我讀過全文，內容
+- B（CLAUDE.md）：Sonnet subagent 完成，36 行，索引 11 項。我讀過全文，內容
   正確、索引齊全，語氣對 Haiku 友善。移除了原本「E-templates 若還沒寫完先照路徑用」的過渡性
   提示（E 完成後這句話已經沒必要）。
 - E（五份範本）：Sonnet subagent 完成，search/implement/refactor/research/review 各 58–64 行。
