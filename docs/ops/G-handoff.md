@@ -59,24 +59,28 @@
 - [x] C｜模型調度守則 → `docs/ops/C-model-dispatch.md`
 - [x] D｜判斷力外化（rubric/checklist）→ `docs/ops/D-judgment-rubrics.md`
 - [x] F｜維護協議 → `docs/ops/F-maintenance.md`
-- [ ] B｜CLAUDE.md 重構（架構由我決定，Sonnet subagent 寫，我驗收）— 進行中，已設計架構，已派工
-- [ ] E｜五份任務交辦範本（我設計欄位，Sonnet subagent 產出全文，抽查 2 份）— 進行中，已設計欄位，已派工
+- [x] B｜CLAUDE.md 重構 → `/CLAUDE.md`（39 行，索引 11 項）
+- [x] E｜五份任務交辦範本 → `docs/ops/E-templates/{search,implement,refactor,research,review}.md`
 - [ ] 收尾 1：對抗審查（fresh-context Sonnet subagent）
 - [ ] 收尾 2：行為測試（Haiku subagent 實跑範本）
 - [ ] 收尾 3：read-back 驗證每個檔案
 - [ ] 收尾 4：一頁總結
-- [ ] commit + push
+- [ ] commit + push（第一批已完成，還需再 push 這批 B/E 完成的變更）
 
 ## 3. 放棄/延後項
 
 （尚無）
 
-## 3.5 派工中（背景執行，尚未驗收）
+## 3.5 派工結果（已驗收）
 
-- B（CLAUDE.md）：已派 Sonnet subagent（general-purpose, model=sonnet）撰寫，等待回報後我會驗收
-  行數上限（≤150 行）、索引完整性、語氣是否對 Haiku 4.5 友善。
-- E（五份範本）：已派另一個 Sonnet subagent 平行撰寫 search/implement/refactor/research/review
-  五份，等待回報後我會抽查其中 2 份（優先抽查 implement 與 review，因為風險判斷最重）。
+- B（CLAUDE.md）：Sonnet subagent 完成，39 行（限 150 行內），索引 11 項。我讀過全文，內容
+  正確、索引齊全，語氣對 Haiku 友善。移除了原本「E-templates 若還沒寫完先照路徑用」的過渡性
+  提示（E 完成後這句話已經沒必要）。
+- E（五份範本）：Sonnet subagent 完成，search/implement/refactor/research/review 各 58–64 行。
+  我親自全文讀過 implement.md 與 review.md（風險判斷最重的兩份），欄位設計一致、與 C/D 呼應
+  正確、範例具體可執行，判定合格；另外三份用 `wc -l` + 開頭確認非空且格式一致，未逐字全讀。
+  subagent 自己指出的風險：五份範本裡「本任務指定：＿＿＿」這格容易被漏填，等於看起來合法
+  卻沒真的指定模型——已記錄，見下方「待辦追蹤」新增一項給 F 維護協議或未來 review 時檢查。
 
 ## 4. 中斷時必看
 
