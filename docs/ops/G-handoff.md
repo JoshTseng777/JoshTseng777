@@ -61,7 +61,7 @@
 - [x] F｜維護協議 → `docs/ops/F-maintenance.md`
 - [x] B｜CLAUDE.md 重構 → `/CLAUDE.md`（39 行，索引 11 項）
 - [x] E｜五份任務交辦範本 → `docs/ops/E-templates/{search,implement,refactor,research,review}.md`
-- [ ] 收尾 1：對抗審查（fresh-context Sonnet subagent）
+- [ ] 收尾 1：對抗審查（fresh-context Sonnet subagent）— 已派工，執行中，會直接修檔案
 - [ ] 收尾 2：行為測試（Haiku subagent 實跑範本）
 - [ ] 收尾 3：read-back 驗證每個檔案
 - [ ] 收尾 4：一頁總結
